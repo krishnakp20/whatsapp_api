@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Multi-Session Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background:#f7f7f7;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 { color: #333; }
+        .session-card {
+            background: #fff;
+            padding: 20px;
+            margin: 20px auto;
+            width: 550px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .qr-img {
+            width: 200px;
+            margin: 10px auto;
+        }
+        form {
+            margin-top: 10px;
+        }
+        input, button, select, textarea {
+            padding: 8px;
+            margin: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 80%;
+        }
+        textarea { height: 50px; }
+        button {
+            background: #25D366;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+        }
+        button.logout { background: #ff4d4d; }
+        .feature-section {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📲 WhatsApp Multi-Session Dashboard</h1>
+
+    <!-- ✅ Create New Session -->
+    <form method="POST" action="/create-session">
+        <input type="text" name="sessionId" placeholder="Enter new session ID" required>
+        <button type="submit">➕ Create Session</button>
+    </form>
+
+    <h2>Active Sessions</h2>
+
+    <% if (sessions.length === 0) { %>
+        <p>No active sessions. Create one above.</p>
+    <% } %>
+
+    <% sessions.forEach(session => { %>
+        <div class="session-card">
+            <h3>📌 Session: <%= session %></h3>
+
+            <!-- ✅ QR Code -->
+            <% if (qrCodes[session]) { %>
+                <p>Scan this QR to login:</p>
+                <img class="qr-img" src="<%= qrCodes[session] %>" alt="QR Code">
+            <% } else { %>
+                <p>✅ Logged in</p>
+            <% } %>
+
+            <!-- ✅ Logout -->
+            <form method="POST" action="/logout-session">
+                <input type="hidden" name="sessionId" value="<%= session %>">
+                <button class="logout">🚪 Logout Session</button>
+            </form>
+
+            <!-- ✅ Send Text -->
+            <div class="feature-section">
+                <h4>💬 Send Text Message</h4>
+                <form method="POST" action="/send-text">
+                    <input type="hidden" name="sessionId" value="<%= session %>">
+                    <input type="text" name="number" placeholder="WhatsApp Number (e.g. 919999999999)" required>
+                    <input type="text" name="message" placeholder="Your message" required>
+                    <button type="submit">📤 Send Text</button>
+                </form>
+            </div>
+
+            <!-- ✅ Send Media -->
+            <div class="feature-section">
+                <h4>🖼️ Send Media (Image / PDF / Doc)</h4>
+                <form method="POST" action="/send-media" enctype="multipart/form-data">
+                    <input type="hidden" name="sessionId" value="<%= session %>">
+                    <input type="text" name="number" placeholder="WhatsApp Number" required>
+                    <input type="file" name="file" required>
+                    <input type="text" name="caption" placeholder="Caption (optional)">
+                    <button type="submit">📤 Send Media</button>
+                </form>
+            </div>
+
+            <!-- ✅ Send Text to Group -->
+            <div class="feature-section">
+                <h4>👥 Send Text to Group</h4>
+                <form method="POST" action="/send-text-group">
+                    <input type="hidden" name="sessionId" value="<%= session %>">
+                    <input type="text" name="groupName" placeholder="Group Name" required>
+                    <input type="text" name="message" placeholder="Your message" required>
+                    <button type="submit">📤 Send to Group</button>
+                </form>
+            </div>
+            <!-- ✅ Send Media to Group -->
+            <div class="feature-section">
+                <h4>🖼️ Send Media to Group</h4>
+                <form method="POST" action="/send-media-group" enctype="multipart/form-data">
+                    <input type="hidden" name="sessionId" value="<%= session %>">
+                    <input type="text" name="groupName" placeholder="Group Name" required>
+                    <input type="file" name="file" required>
+                    <input type="text" name="caption" placeholder="Caption (optional)">
+                    <button type="submit">📤 Send Media to Group</button>
+                </form>
+            </div>
+
+            <!-- ✅ Broadcast Message -->
+            <div class="feature-section">
+                <h4>📢 Broadcast Message (Multiple Numbers)</h4>
+                <form method="POST" action="/broadcast">
+                    <input type="hidden" name="sessionId" value="<%= session %>">
+                    <textarea name="numbers" placeholder="Comma-separated numbers (e.g. 91999...,91888...)" required></textarea>
+                    <textarea name="message" placeholder="Your message" required></textarea>
+                    <button type="submit">📤 Send Broadcast</button>
+                </form>
+            </div>
+
+            <!-- ✅ Schedule Message -->
+            <div class="feature-section">
+                <h4>⏰ Schedule Message</h4>
+                <form method="POST" action="/schedule-message">
+                    <input type="hidden" name="sessionId" value="<%= session %>">
+                    <input type="text" name="number" placeholder="WhatsApp Number" required>
+                    <input type="text" name="message" placeholder="Your message" required>
+                    <input type="text" name="cronTime" placeholder="Cron Format (e.g. */1 * * * *)" required>
+                    <button type="submit">📆 Schedule</button>
+                </form>
+                <small>Example: <code>*/1 * * * *</code> = every minute</small>
+            </div>
+            <!-- ✅ View Groups & Contacts -->
+            <div class="feature-section">
+                <h4>📜 View All Groups & Contacts</h4>
+                <button onclick="fetchGroups('<%= session %>')">🔍 Load Groups</button>
+                <button onclick="fetchContacts('<%= session %>')">🔍 Load Contacts</button>
+                <div id="groups-<%= session %>"></div>
+                <div id="contacts-<%= session %>"></div>
+            </div>
+            <!-- ✅ Group Management -->
+            <div class="feature-section">
+                <h4>👥 Group Management</h4>
+
+                <form method="POST" action="/create-group">
+                    <input type="hidden" name="sessionId" value="<%= session %>">
+                    <input type="text" name="groupName" placeholder="New Group Name" required>
+                    <textarea name="participants" placeholder="Comma-separated numbers (e.g. 91999...,91888...)" required></textarea>
+                    <button type="submit">➕ Create Group</button>
+                </form>
+
+                <form method="POST" action="/add-member">
+                    <input type="hidden" name="sessionId" value="<%= session %>">
+                    <input type="text" name="groupName" placeholder="Group Name" required>
+                    <input type="text" name="number" placeholder="Number to Add" required>
+                    <button type="submit">➕ Add Member</button>
+                </form>
+            </div>
+        </div>
+    <% }) %>
+<script>
+async function fetchGroups(sessionId) {
+    const res = await fetch(`/api/groups/${sessionId}`, {
+        headers: { 'x-api-key': '<%= API_KEY %>' }
+    });
+    const groups = await res.json();
+    document.getElementById(`groups-${sessionId}`).innerHTML =
+        '<ul>' + groups.map(g => `<li onclick="copyToClipboard('${g}')">${g}</li>`).join('') + '</ul>';
+}
+
+async function fetchContacts(sessionId) {
+    const res = await fetch(`/api/contacts/${sessionId}`, {
+        headers: { 'x-api-key': '<%= API_KEY %>' }
+    });
+    const contacts = await res.json();
+    document.getElementById(`contacts-${sessionId}`).innerHTML =
+        '<ul>' + contacts.map(c => `<li onclick="copyToClipboard('${c.number}')">${c.name} (${c.number})</li>`).join('') + '</ul>';
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text);
+    alert(`📋 Copied: ${text}`);
+}
+</script>
+
+</body>
+</html>

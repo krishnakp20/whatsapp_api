@@ -1,0 +1,199 @@
+openapi: 3.0.0
+info:
+  title: WhatsApp Multi API
+  version: 1.0.0
+  description: API documentation for WhatsApp multi-session service
+servers:
+  - url: http://localhost:3001
+security:
+  - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      name: x-api-key
+      in: header
+
+tags:
+  - name: Messages
+    description: Send text and media messages
+  - name: Groups
+    description: Manage groups and participants
+
+paths:
+  /api/send-text:
+    post:
+      summary: Send a text message to a WhatsApp number
+      tags: [Messages]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  example: "session1"
+                number:
+                  type: string
+                  example: "919876543210"
+                message:
+                  type: string
+                  example: "Hello from API!"
+      responses:
+        200:
+          description: Text sent successfully
+  /api/send-text-group:
+    post:
+      summary: Send a text message to a WhatsApp group
+      tags: [Messages]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  example: "session1"
+                groupName:
+                  type: string
+                  example: "Test Group"
+                message:
+                  type: string
+                  example: "Hello Group!"
+      responses:
+        200:
+          description: Text sent to group successfully
+  /api/send-media:
+    post:
+      summary: Send media to a WhatsApp number
+      tags: [Messages]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                number:
+                  type: string
+                caption:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Media sent successfully
+  /api/send-media-group:
+    post:
+      summary: Send media to a WhatsApp group
+      tags: [Messages]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                groupName:
+                  type: string
+                caption:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Media sent to group successfully
+  /api/create-group:
+    post:
+      summary: Create a WhatsApp group and add participants
+      tags: [Groups]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                groupName:
+                  type: string
+                participants:
+                  type: string
+                  example: "919876543210,918888888888"
+      responses:
+        200:
+          description: Group created successfully
+  /api/add-member:
+    post:
+      summary: Add a member to an existing group
+      tags: [Groups]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                groupName:
+                  type: string
+                number:
+                  type: string
+                  example: "919876543210"
+      responses:
+        200:
+          description: Member added successfully
+  /api/groups/{sessionId}:
+    get:
+      summary: Get all groups for a session
+      tags: [Groups]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: List of groups
+  /api/contacts/{sessionId}:
+    get:
+      summary: Get all contacts for a session
+      tags: [Groups]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: List of contacts
