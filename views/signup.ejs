@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp Dashboard Login</title>
+  <title>Sign up</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
   <div class="w-full max-w-sm bg-white rounded-xl shadow-lg p-6">
-    <h2 class="text-2xl font-semibold text-gray-800 mb-4">🔐 WhatsApp Dashboard</h2>
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Create your account</h2>
     <% if (error) { %>
       <p class="text-red-600 text-sm mb-3"><%= error %></p>
     <% } %>
-    <form method="POST" action="/login" class="space-y-3">
+    <form method="POST" action="/signup" class="space-y-3">
       <input type="email" name="email" placeholder="Email" class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
       <input type="password" name="password" placeholder="Password" class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" required>
-      <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-md py-2 font-medium">Login</button>
+      <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-md py-2 font-medium">Sign up</button>
     </form>
-    <p class="text-sm text-gray-600 mt-3">No account? <a href="/signup" class="text-emerald-600 hover:underline">Sign up</a></p>
-    <hr class="my-4">
-    <small class="text-gray-500">Legacy Admin Login: leave email empty and use ADMIN_PASSWORD.</small>
+    <p class="text-sm text-gray-600 mt-3">Have an account? <a href="/login" class="text-emerald-600 hover:underline">Login</a></p>
   </div>
 </body>
 </html>
+
+

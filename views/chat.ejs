@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+  <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded bg-emerald-500"></div>
+        <span class="font-semibold">Chat Panel</span>
+      </div>
+      <nav class="hidden md:flex items-center gap-4 text-sm">
+        <a href="/" class="hover:text-emerald-700">Dashboard</a>
+        <a href="/admin" class="hover:text-emerald-700">Admin</a>
+        <a href="/swagger" class="hover:text-emerald-700">API</a>
+      </nav>
+      <a href="/logout" class="text-sm text-red-600">Logout</a>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 md:grid-cols-12 gap-4">
+    <aside class="md:col-span-3 bg-white rounded-lg shadow p-3">
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fas fa-list text-gray-600"></i>
+        <span class="font-semibold">Threads</span>
+      </div>
+      <div class="flex items-center gap-2 mb-3">
+        <input id="searchInput" type="text" placeholder="Search..." class="w-full border rounded px-3 py-2 text-sm" oninput="renderThreads()">
+      </div>
+      <ul id="threadList" class="space-y-1 max-h-[70vh] overflow-auto"></ul>
+    </aside>
+
+    <section class="md:col-span-9 bg-white rounded-lg shadow flex flex-col h-[80vh]">
+      <div class="flex items-center justify-between border-b p-3">
+        <div class="font-semibold"><span id="activePeer">Select a thread</span></div>
+        <div class="flex items-center gap-2">
+          <select id="chatSessionSelect" class="border rounded px-2 py-1 text-sm"></select>
+          <button id="createTicketBtn" class="px-3 py-1 bg-purple-600 text-white rounded text-sm disabled:opacity-50" disabled>Create Ticket</button>
+        </div>
+      </div>
+      <div id="messageList" class="flex-1 p-4 overflow-auto space-y-2 bg-gray-50"></div>
+      <form id="composer" class="p-3 border-t flex gap-2" onsubmit="return sendFromChat(event)">
+        <input type="text" id="composerInput" placeholder="Type a message..." class="flex-1 border rounded px-3 py-2">
+        <button class="px-4 bg-emerald-600 text-white rounded">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    let threads = [];
+    let activePeer = '';
+
+    async function loadSessions() {
+      const res = await fetch('/sessions');
+      const data = await res.json();
+      const sel = document.getElementById('chatSessionSelect');
+      sel.innerHTML = '<option value="">Session</option>' + data.activeSessions.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    async function loadThreads() {
+      const res = await fetch('/chat/threads');
+      threads = await res.json();
+      renderThreads();
+    }
+
+    function renderThreads() {
+      const q = (document.getElementById('searchInput').value || '').toLowerCase();
+      const list = document.getElementById('threadList');
+      list.innerHTML = '';
+      threads
+        .filter(t => t.peer.toLowerCase().includes(q))
+        .forEach(t => {
+          const li = document.createElement('li');
+          li.className = 'px-3 py-2 rounded hover:bg-gray-100 cursor-pointer text-left';
+          li.textContent = t.peer;
+          li.onclick = () => openThread(t.peer);
+          list.appendChild(li);
+        });
+    }
+
+    async function openThread(peer) {
+      activePeer = peer;
+      document.getElementById('activePeer').textContent = peer;
+      document.getElementById('createTicketBtn').disabled = false;
+      const res = await fetch(`/chat/messages?peer=${encodeURIComponent(peer)}`);
+      const msgs = await res.json();
+      const box = document.getElementById('messageList');
+      box.innerHTML = '';
+      msgs.forEach(m => {
+        const row = document.createElement('div');
+        row.className = 'flex ' + (m.type === 'text' ? '' : '')
+        const bubble = document.createElement('div');
+        bubble.className = 'inline-block px-3 py-2 rounded-lg ' + (m.status === 'read' ? 'bg-emerald-100' : 'bg-white border');
+        bubble.textContent = m.content || '';
+        const meta = document.createElement('div');
+        meta.className = 'text-xs text-gray-500 mt-1';
+        meta.textContent = (m.status || '') + ' • ' + new Date(m.created_at).toLocaleString();
+        const wrap = document.createElement('div');
+        wrap.appendChild(bubble);
+        wrap.appendChild(meta);
+        row.appendChild(wrap);
+        box.appendChild(row);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendFromChat(e) {
+      e.preventDefault();
+      const sel = document.getElementById('chatSessionSelect');
+      const sid = sel.value;
+      if (!sid) return alert('Select a session');
+      if (!activePeer) return alert('Select a thread');
+      const input = document.getElementById('composerInput');
+      const message = input.value.trim();
+      if (!message) return false;
+      const res = await fetch('/chat/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: sid, peer: activePeer, message })
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || 'Send failed'); return false; }
+      input.value = '';
+      openThread(activePeer);
+      return false;
+    }
+
+    document.getElementById('createTicketBtn').onclick = async () => {
+      if (!activePeer) return;
+      const res = await fetch('/chat/ticket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ peer: activePeer }) });
+      if (res.ok) alert('Ticket created'); else alert('Ticket failed');
+    };
+
+    loadSessions();
+    loadThreads();
+  </script>
+</body>
+</html>
+
+

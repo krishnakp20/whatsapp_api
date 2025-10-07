@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded bg-emerald-500"></div>
+        <span class="font-semibold">WhatsApp Console</span>
+      </div>
+      <nav class="hidden md:flex items-center gap-4 text-sm">
+        <a href="/" class="hover:text-emerald-700">Dashboard</a>
+        <a href="/admin" class="text-emerald-700">Admin</a>
+        <a href="/chat" class="hover:text-emerald-700">Chat</a>
+        <a href="/swagger" class="hover:text-emerald-700">API</a>
+      </nav>
+      <a href="/logout" class="text-sm text-red-600">Logout</a>
+    </div>
+  </header>
+
+  <div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-3xl font-semibold mb-4">🛠️ Admin Panel</h1>
+    <p><a href="/" class="text-emerald-600 hover:underline">⬅ Back to Dashboard</a></p>
+
+    <% if (error) { %>
+      <div class="bg-red-50 text-red-700 p-3 rounded-md my-3"><%= error %></div>
+    <% } %>
+    <% if (ok) { %>
+      <div class="bg-emerald-50 text-emerald-700 p-3 rounded-md my-3"><%= ok %></div>
+    <% } %>
+
+    <div class="bg-white rounded-xl shadow p-4 my-4">
+      <h2 class="text-xl font-semibold mb-3">Users</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="text-left p-2">ID</th>
+              <th class="text-left p-2">Email</th>
+              <th class="text-left p-2">API Key</th>
+              <th class="text-left p-2">Created</th>
+              <th class="text-left p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+          <% users.forEach(u => { %>
+            <tr class="border-b">
+              <td class="p-2"><%= u.id %></td>
+              <td class="p-2"><%= u.email %></td>
+              <td class="p-2 font-mono break-all"><%= u.api_key %></td>
+              <td class="p-2"><%= u.created_at %></td>
+              <td class="p-2">
+                <form method="POST" action="/admin/reset-apikey" class="inline" onsubmit="return confirm('Reset API key?')">
+                  <input type="hidden" name="userId" value="<%= u.id %>">
+                  <button class="px-3 py-1 rounded bg-emerald-500 text-white">Reset API</button>
+                </form>
+                <form method="POST" action="/admin/delete-user" class="inline" onsubmit="return confirm('Delete user? This removes messages, sessions, quotas.')")>
+                  <input type="hidden" name="userId" value="<%= u.id %>">
+                  <button class="px-3 py-1 rounded bg-red-500 text-white">Delete</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-4 my-4">
+      <h2 class="text-xl font-semibold mb-3">Quotas</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="text-left p-2">User ID</th>
+              <th class="text-left p-2">Free Limit</th>
+              <th class="text-left p-2">Used</th>
+              <th class="text-left p-2">Period</th>
+              <th class="text-left p-2">Reset At</th>
+              <th class="text-left p-2">Update</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% users.forEach(u => { const q = quotas.find(q => q.user_id === u.id) || {}; %>
+            <tr class="border-b">
+              <td class="p-2"><%= u.id %></td>
+              <td class="p-2"><%= q.free_limit || 100 %></td>
+              <td class="p-2"><%= q.used_count || 0 %></td>
+              <td class="p-2"><%= q.period || 'lifetime' %></td>
+              <td class="p-2"><%= q.reset_at || '-' %></td>
+              <td class="p-2">
+                <form method="POST" action="/admin/update-quota" class="flex items-center gap-2">
+                  <input type="hidden" name="userId" value="<%= u.id %>">
+                  <input type="number" name="freeLimit" placeholder="Free limit" min="0" class="border rounded p-1 w-32">
+                  <button class="px-3 py-1 rounded bg-emerald-500 text-white">Save</button>
+                </form>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-4 my-4">
+      <h2 class="text-xl font-semibold mb-3">Sessions</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="text-left p-2">User ID</th>
+              <th class="text-left p-2">Session ID</th>
+              <th class="text-left p-2">Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sessions.forEach(s => { %>
+            <tr class="border-b">
+              <td class="p-2"><%= s.user_id %></td>
+              <td class="p-2"><%= s.session_id %></td>
+              <td class="p-2"><%= s.created_at %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mt-10 border-t">
+    <div class="max-w-7xl mx-auto px-4 py-4 text-sm text-gray-500 flex items-center justify-between">
+      <span>© <script>document.write(new Date().getFullYear())</script> WhatsApp Console</span>
+      <a href="/swagger" class="hover:text-emerald-700">API Docs</a>
+    </div>
+  </footer>
+</body>
+</html>
+
+

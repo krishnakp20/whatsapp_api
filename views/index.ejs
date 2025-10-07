@@ -3,206 +3,709 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Multi-Session Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background:#f7f7f7;
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
-        h1 { color: #333; }
-        .session-card {
-            background: #fff;
-            padding: 20px;
-            margin: 20px auto;
-            width: 550px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .qr-img {
-            width: 200px;
-            margin: 10px auto;
-        }
-        form {
-            margin-top: 10px;
-        }
-        input, button, select, textarea {
-            padding: 8px;
-            margin: 5px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            width: 80%;
-        }
-        textarea { height: 50px; }
-        button {
-            background: #25D366;
-            color: #fff;
-            cursor: pointer;
-            font-weight: bold;
-            border: none;
-        }
-        button.logout { background: #ff4d4d; }
-        .feature-section {
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
-        }
-    </style>
+    <title>WhatsApp Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-gray-100">
 
-    <h1>📲 WhatsApp Multi-Session Dashboard</h1>
+  <!-- Sidebar -->
+  <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
+    <div class="flex items-center justify-center h-16 px-4 bg-gradient-to-r from-emerald-500 to-emerald-600">
+      <i class="fas fa-whatsapp text-white text-2xl mr-2"></i>
+      <span class="text-white font-bold text-lg">WhatsApp Console</span>
+    </div>
+    <nav class="mt-8">
+      <div class="px-4">
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Main</div>
+        <a href="/" class="flex items-center px-4 py-3 text-emerald-600 bg-emerald-50 border-r-2 border-emerald-600">
+          <i class="fas fa-tachometer-alt mr-3"></i>
+          Dashboard
+        </a>
+        <a href="/admin" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 hover:text-emerald-600">
+          <i class="fas fa-cog mr-3"></i>
+          Admin Panel
+        </a>
+        <a href="/chat" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 hover:text-emerald-600">
+          <i class="fas fa-comments mr-3"></i>
+          Chat Panel
+        </a>
+        <a href="/swagger" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 hover:text-emerald-600">
+          <i class="fas fa-code mr-3"></i>
+          API Docs
+        </a>
+      </div>
+      <div class="px-4 mt-8">
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Account</div>
+        <div class="px-4 py-3 bg-gray-50 rounded-lg">
+          <div class="text-xs text-gray-500 mb-1">API Key</div>
+          <code class="text-xs text-gray-800 break-all"><%= API_KEY %></code>
+        </div>
+        <a href="/logout" class="flex items-center px-4 py-3 text-red-600 hover:bg-red-50 mt-2">
+          <i class="fas fa-sign-out-alt mr-3"></i>
+          Logout
+        </a>
+      </div>
+    </nav>
+  </div>
 
-    <!-- ✅ Create New Session -->
-    <form method="POST" action="/create-session">
-        <input type="text" name="sessionId" placeholder="Enter new session ID" required>
-        <button type="submit">➕ Create Session</button>
-    </form>
+  <!-- Main Content -->
+  <div class="ml-64">
+    <!-- Top Bar -->
+    <header class="bg-white shadow-sm border-b">
+      <div class="px-6 py-4">
+        <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p class="text-gray-600 mt-1">Manage your WhatsApp sessions and messages</p>
+      </div>
+    </header>
 
-    <h2>Active Sessions</h2>
+    <!-- Content -->
+    <main class="p-6">
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+              <i class="fas fa-mobile-alt text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Active Sessions</p>
+              <p class="text-2xl font-bold text-gray-900"><%= sessions.length %></p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600">
+              <i class="fas fa-paper-plane text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Free Messages</p>
+              <p id="quotaLeft" class="text-2xl font-bold text-gray-900">loading…</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+              <i class="fas fa-cog text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Session</p>
+              <select id="sessionSelect" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500" onchange="onSessionChange()">
+                <option value="">Select session</option>
+                <% sessions.forEach(s => { %>
+                  <option value="<%= s %>"><%= s %></option>
+                <% }) %>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      <!-- Create Session -->
     <% if (sessions.length === 0) { %>
-        <p>No active sessions. Create one above.</p>
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Create Your First Session</h3>
+          <form method="POST" action="/create-session" class="flex gap-4">
+            <input type="text" name="sessionId" placeholder="Enter session ID (e.g., my-session)" class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+            <button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500">
+              <i class="fas fa-plus mr-2"></i>Create Session
+            </button>
+          </form>
+        </div>
     <% } %>
 
-    <% sessions.forEach(session => { %>
-        <div class="session-card">
-            <h3>📌 Session: <%= session %></h3>
+      <!-- Action Menu -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <button onclick="showSection('sendText')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-comment text-blue-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">Send Text</span>
+          </div>
+          <p class="text-sm text-gray-600">Send text messages</p>
+        </button>
+        <button onclick="showSection('sendMedia')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-image text-green-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">Send Media</span>
+          </div>
+          <p class="text-sm text-gray-600">Send images & files</p>
+        </button>
+        <button onclick="showSection('groupText')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-users text-purple-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">Group Text</span>
+          </div>
+          <p class="text-sm text-gray-600">Send to groups</p>
+        </button>
+        <button onclick="showSection('groupMedia')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-share text-orange-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">Group Media</span>
+          </div>
+          <p class="text-sm text-gray-600">Media to groups</p>
+        </button>
+        <button onclick="showSection('broadcast')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-bullhorn text-red-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">Broadcast</span>
+          </div>
+          <p class="text-sm text-gray-600">Mass messaging</p>
+        </button>
+        <button onclick="showSection('schedule')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-clock text-indigo-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">Schedule</span>
+          </div>
+          <p class="text-sm text-gray-600">Schedule messages</p>
+        </button>
+        <button onclick="showSection('lists')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-list text-teal-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">Lists</span>
+          </div>
+          <p class="text-sm text-gray-600">Groups & contacts</p>
+        </button>
+        <button onclick="showSection('logout')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-sign-out-alt text-gray-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">Logout</span>
+          </div>
+          <p class="text-sm text-gray-600">Logout session</p>
+        </button>
+        <button onclick="showSection('apiDocs')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-book text-sky-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">API Docs</span>
+          </div>
+          <p class="text-sm text-gray-600">Open Swagger inside panel</p>
+        </button>
+        <button onclick="showSection('chatPanel')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-comments text-pink-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">Chat Panel</span>
+          </div>
+          <p class="text-sm text-gray-600">Message threads & history</p>
+        </button>
+        <button onclick="showSection('exportMessages')" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow text-left">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-download text-amber-600 text-xl mr-3"></i>
+            <span class="font-semibold text-gray-900">Export Messages</span>
+          </div>
+          <p class="text-sm text-gray-600">Download message history</p>
+        </button>
+      </div>
 
-            <!-- ✅ QR Code -->
-            <% if (qrCodes[session]) { %>
-                <p>Scan this QR to login:</p>
-                <img class="qr-img" src="<%= qrCodes[session] %>" alt="QR Code">
-            <% } else { %>
-                <p>✅ Logged in</p>
-            <% } %>
+      <!-- Action Forms -->
+      <div id="qrInfo" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">QR Code / Status</h3>
+        <div id="qrContainer" class="text-center"></div>
+      </div>
 
-            <!-- ✅ Logout -->
-            <form method="POST" action="/logout-session">
-                <input type="hidden" name="sessionId" value="<%= session %>">
-                <button class="logout">🚪 Logout Session</button>
+      <div id="sendText" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Send Text Message</h3>
+        <form method="POST" action="/send-text" onsubmit="return submitAjax(event)" class="space-y-4">
+          <input type="hidden" name="sessionId">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
+            <input type="text" name="number" placeholder="919999999999" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <textarea name="message" placeholder="Your message here..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" rows="3" required></textarea>
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500">
+            <i class="fas fa-paper-plane mr-2"></i>Send Message
+          </button>
             </form>
+      </div>
 
-            <!-- ✅ Send Text -->
-            <div class="feature-section">
-                <h4>💬 Send Text Message</h4>
-                <form method="POST" action="/send-text">
-                    <input type="hidden" name="sessionId" value="<%= session %>">
-                    <input type="text" name="number" placeholder="WhatsApp Number (e.g. 919999999999)" required>
-                    <input type="text" name="message" placeholder="Your message" required>
-                    <button type="submit">📤 Send Text</button>
-                </form>
-            </div>
-
-            <!-- ✅ Send Media -->
-            <div class="feature-section">
-                <h4>🖼️ Send Media (Image / PDF / Doc)</h4>
-                <form method="POST" action="/send-media" enctype="multipart/form-data">
-                    <input type="hidden" name="sessionId" value="<%= session %>">
-                    <input type="text" name="number" placeholder="WhatsApp Number" required>
-                    <input type="file" name="file" required>
-                    <input type="text" name="caption" placeholder="Caption (optional)">
-                    <button type="submit">📤 Send Media</button>
-                </form>
-            </div>
-
-            <!-- ✅ Send Text to Group -->
-            <div class="feature-section">
-                <h4>👥 Send Text to Group</h4>
-                <form method="POST" action="/send-text-group">
-                    <input type="hidden" name="sessionId" value="<%= session %>">
-                    <input type="text" name="groupName" placeholder="Group Name" required>
-                    <input type="text" name="message" placeholder="Your message" required>
-                    <button type="submit">📤 Send to Group</button>
-                </form>
-            </div>
-            <!-- ✅ Send Media to Group -->
-            <div class="feature-section">
-                <h4>🖼️ Send Media to Group</h4>
-                <form method="POST" action="/send-media-group" enctype="multipart/form-data">
-                    <input type="hidden" name="sessionId" value="<%= session %>">
-                    <input type="text" name="groupName" placeholder="Group Name" required>
-                    <input type="file" name="file" required>
-                    <input type="text" name="caption" placeholder="Caption (optional)">
-                    <button type="submit">📤 Send Media to Group</button>
+      <div id="sendMedia" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Send Media</h3>
+        <form method="POST" action="/send-media" enctype="multipart/form-data" onsubmit="return submitAjax(event)" class="space-y-4">
+          <input type="hidden" name="sessionId">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
+            <input type="text" name="number" placeholder="919999999999" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">File</label>
+            <input type="file" name="file" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Caption (optional)</label>
+            <input type="text" name="caption" placeholder="Add a caption..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500">
+            <i class="fas fa-upload mr-2"></i>Send Media
+          </button>
                 </form>
             </div>
 
-            <!-- ✅ Broadcast Message -->
-            <div class="feature-section">
-                <h4>📢 Broadcast Message (Multiple Numbers)</h4>
-                <form method="POST" action="/broadcast">
-                    <input type="hidden" name="sessionId" value="<%= session %>">
-                    <textarea name="numbers" placeholder="Comma-separated numbers (e.g. 91999...,91888...)" required></textarea>
-                    <textarea name="message" placeholder="Your message" required></textarea>
-                    <button type="submit">📤 Send Broadcast</button>
+      <div id="groupText" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Send Text to Group</h3>
+        <form method="POST" action="/send-text-group" onsubmit="return submitAjax(event)" class="space-y-4">
+          <input type="hidden" name="sessionId">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Group Name</label>
+            <input type="text" name="groupName" placeholder="Group Name" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <textarea name="message" placeholder="Your message here..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" rows="3" required></textarea>
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500">
+            <i class="fas fa-users mr-2"></i>Send to Group
+          </button>
                 </form>
             </div>
 
-            <!-- ✅ Schedule Message -->
-            <div class="feature-section">
-                <h4>⏰ Schedule Message</h4>
-                <form method="POST" action="/schedule-message">
-                    <input type="hidden" name="sessionId" value="<%= session %>">
-                    <input type="text" name="number" placeholder="WhatsApp Number" required>
-                    <input type="text" name="message" placeholder="Your message" required>
-                    <input type="text" name="cronTime" placeholder="Cron Format (e.g. */1 * * * *)" required>
-                    <button type="submit">📆 Schedule</button>
+      <div id="groupMedia" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Send Media to Group</h3>
+        <form method="POST" action="/send-media-group" enctype="multipart/form-data" onsubmit="return submitAjax(event)" class="space-y-4">
+          <input type="hidden" name="sessionId">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Group Name</label>
+            <input type="text" name="groupName" placeholder="Group Name" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">File</label>
+            <input type="file" name="file" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Caption (optional)</label>
+            <input type="text" name="caption" placeholder="Add a caption..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500">
+            <i class="fas fa-share mr-2"></i>Send Media to Group
+          </button>
                 </form>
-                <small>Example: <code>*/1 * * * *</code> = every minute</small>
             </div>
-            <!-- ✅ View Groups & Contacts -->
-            <div class="feature-section">
-                <h4>📜 View All Groups & Contacts</h4>
-                <button onclick="fetchGroups('<%= session %>')">🔍 Load Groups</button>
-                <button onclick="fetchContacts('<%= session %>')">🔍 Load Contacts</button>
-                <div id="groups-<%= session %>"></div>
-                <div id="contacts-<%= session %>"></div>
-            </div>
-            <!-- ✅ Group Management -->
-            <div class="feature-section">
-                <h4>👥 Group Management</h4>
 
-                <form method="POST" action="/create-group">
-                    <input type="hidden" name="sessionId" value="<%= session %>">
-                    <input type="text" name="groupName" placeholder="New Group Name" required>
-                    <textarea name="participants" placeholder="Comma-separated numbers (e.g. 91999...,91888...)" required></textarea>
-                    <button type="submit">➕ Create Group</button>
-                </form>
-
-                <form method="POST" action="/add-member">
-                    <input type="hidden" name="sessionId" value="<%= session %>">
-                    <input type="text" name="groupName" placeholder="Group Name" required>
-                    <input type="text" name="number" placeholder="Number to Add" required>
-                    <button type="submit">➕ Add Member</button>
+      <div id="broadcast" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Broadcast Message</h3>
+        <form method="POST" action="/broadcast" onsubmit="return submitAjax(event)" class="space-y-4">
+          <input type="hidden" name="sessionId">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Numbers (comma-separated)</label>
+            <textarea name="numbers" placeholder="919999999999,918888888888,917777777777" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" rows="3" required></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <textarea name="message" placeholder="Your broadcast message..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" rows="4" required></textarea>
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500">
+            <i class="fas fa-bullhorn mr-2"></i>Send Broadcast
+          </button>
                 </form>
             </div>
+
+      <div id="schedule" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Schedule Message</h3>
+        <form method="POST" action="/schedule-message" onsubmit="return submitAjax(event)" class="space-y-4">
+          <input type="hidden" name="sessionId">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
+            <input type="text" name="number" placeholder="919999999999" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <textarea name="message" placeholder="Your message here..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" rows="3" required></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cron Schedule</label>
+            <input type="text" name="cronTime" placeholder="*/1 * * * *" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+            <p class="text-sm text-gray-500 mt-1">Example: */1 * * * * = every minute</p>
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500">
+            <i class="fas fa-clock mr-2"></i>Schedule Message
+          </button>
+                </form>
+            </div>
+
+      <div id="lists" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Groups & Contacts</h3>
+        <div class="flex gap-4 mb-4">
+          <button onclick="loadGroups()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            <i class="fas fa-list mr-2"></i>Load Groups
+          </button>
+          <button onclick="loadContacts()" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+            <i class="fas fa-address-book mr-2"></i>Load Contacts
+          </button>
+            </div>
+        <div id="groups-list" class="mb-4"></div>
+        <div id="contacts-list"></div>
+            </div>
+
+      <div id="logout" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Logout Session</h3>
+        <p class="text-gray-600 mb-4">This will disconnect the selected session from WhatsApp.</p>
+        <form method="POST" action="/logout-session" onsubmit="return injectSession(event)">
+          <input type="hidden" name="sessionId">
+          <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500">
+            <i class="fas fa-sign-out-alt mr-2"></i>Logout Session
+          </button>
+                </form>
+            </div>
+
+      <div id="apiDocs" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">API Documentation</h3>
+        <div class="h-[70vh] border rounded-md overflow-hidden">
+          <iframe src="/swagger" class="w-full h-full"></iframe>
         </div>
-    <% }) %>
+      </div>
+
+      <div id="chatPanel" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Chat Panel</h3>
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 h-[70vh]">
+          <aside class="md:col-span-3 bg-gray-50 rounded-lg p-3">
+            <div class="flex items-center gap-2 mb-2">
+              <i class="fas fa-list text-gray-600"></i>
+              <span class="font-semibold">Threads</span>
+            </div>
+            <div class="flex items-center gap-2 mb-3">
+              <input id="chatSearchInput" type="text" placeholder="Search..." class="w-full border rounded px-3 py-2 text-sm" oninput="renderChatThreads()">
+            </div>
+            <ul id="chatThreadList" class="space-y-1 max-h-[50vh] overflow-auto"></ul>
+          </aside>
+
+          <section class="md:col-span-9 bg-gray-50 rounded-lg flex flex-col">
+            <div class="flex items-center justify-between border-b p-3 bg-white rounded-t-lg">
+              <div class="font-semibold"><span id="chatActivePeer">Select a thread</span></div>
+              <div class="flex items-center gap-2">
+                <select id="chatSessionSelect" class="border rounded px-2 py-1 text-sm">
+                  <option value="">Select session</option>
+                </select>
+                <button id="createTicketBtn" class="px-3 py-1 bg-purple-600 text-white rounded text-sm disabled:opacity-50" disabled>Create Ticket</button>
+              </div>
+            </div>
+            <div id="chatMessageList" class="flex-1 p-4 overflow-auto space-y-2"></div>
+            <form id="chatComposer" class="p-3 border-t bg-white rounded-b-lg flex gap-2" onsubmit="return sendFromChatPanel(event)">
+              <input type="text" id="chatComposerInput" placeholder="Type a message..." class="flex-1 border rounded px-3 py-2">
+              <button class="px-4 bg-emerald-600 text-white rounded">Send</button>
+            </form>
+          </section>
+        </div>
+      </div>
+
+      <div id="exportMessages" class="bg-white rounded-lg shadow p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Export Messages</h3>
+        <p class="text-gray-600 mb-4">Download your message history as a CSV file.</p>
+        <form class="space-y-4" onsubmit="return handleExportMessages(event)">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <input type="date" id="exportFromDate" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+                <p class="text-xs text-gray-500 mt-1">From date (optional)</p>
+              </div>
+              <div>
+                <input type="date" id="exportToDate" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+                <p class="text-xs text-gray-500 mt-1">To date (optional)</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Recipient (optional)</label>
+            <input type="text" id="exportPeer" placeholder="Leave empty for all messages" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+            <p class="text-xs text-gray-500 mt-1">Filter by specific recipient (e.g., 919999999999@c.us)</p>
+          </div>
+          <button type="submit" class="w-full bg-amber-600 text-white py-2 px-4 rounded-md hover:bg-amber-700 focus:ring-2 focus:ring-amber-500">
+            <i class="fas fa-download mr-2"></i>Export Messages
+          </button>
+          <div class="text-center">
+            <p class="text-sm text-gray-500">or</p>
+            <a id="exportDirectLink" href="/export/messages" class="text-blue-600 hover:text-blue-700 text-sm underline">Direct Download (if above doesn't work)</a>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
 <script>
-async function fetchGroups(sessionId) {
-    const res = await fetch(`/api/groups/${sessionId}`, {
-        headers: { 'x-api-key': '<%= API_KEY %>' }
-    });
+async function fetchQuota() {
+  try {
+    const res = await fetch('/me/quota');
+    const data = await res.json();
+    document.getElementById('quotaLeft').textContent = (data.free_limit - data.used_count);
+  } catch (e) {
+    document.getElementById('quotaLeft').textContent = 'N/A';
+  }
+}
+
+function hideAll() {
+  ['sendText','sendMedia','groupText','groupMedia','broadcast','schedule','lists','logout','qrInfo','apiDocs','chatPanel','exportMessages'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+}
+
+function showSection(id) {
+  hideAll();
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('hidden');
+  updateQrInfo();
+  if (id === 'chatPanel') {
+    loadChatSessions();
+    loadChatThreads();
+  }
+}
+
+function currentSessionId() {
+  const sel = document.getElementById('sessionSelect');
+  return sel ? sel.value : '';
+}
+
+function injectSession(e) {
+  const sid = currentSessionId();
+  if (!sid) { alert('Select a session first'); return false; }
+  const form = e.target;
+  const hidden = form.querySelector('input[name="sessionId"]');
+  if (hidden) hidden.value = sid;
+  return true;
+}
+
+async function submitAjax(e) {
+  e.preventDefault();
+  if (!injectSession(e)) return false;
+  const form = e.target;
+  const action = form.getAttribute('action');
+  const hasFile = form.enctype === 'multipart/form-data';
+  let body;
+  let headers = {};
+  if (hasFile) {
+    body = new FormData(form);
+  } else {
+    const fd = new FormData(form);
+    body = JSON.stringify(Object.fromEntries(fd.entries()));
+    headers['Content-Type'] = 'application/json';
+  }
+  try {
+    const res = await fetch(action, { method: 'POST', body, headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    showToast('Success: ' + (data.message || 'Operation completed'), 'success');
+    form.reset();
+  } catch (err) {
+    showToast('Error: ' + (err.message || 'Failed'), 'error');
+  }
+  return false;
+}
+
+// Toast notifications
+const toastHost = document.createElement('div');
+toastHost.className = 'fixed top-4 right-4 z-[100] space-y-2';
+document.addEventListener('DOMContentLoaded', () => document.body.appendChild(toastHost));
+function showToast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'px-4 py-2 rounded shadow text-white ' + (type === 'success' ? 'bg-emerald-600' : 'bg-red-600');
+  el.textContent = msg;
+  toastHost.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+async function loadGroups() {
+  const sid = currentSessionId();
+  if (!sid) return alert('Select a session first');
+  const res = await fetch(`/groups/${sid}`);
     const groups = await res.json();
-    document.getElementById(`groups-${sessionId}`).innerHTML =
-        '<ul>' + groups.map(g => `<li onclick="copyToClipboard('${g}')">${g}</li>`).join('') + '</ul>';
+  document.getElementById('groups-list').innerHTML = '<div class="bg-gray-50 rounded p-3"><h4 class="font-semibold mb-2">Groups:</h4><ul class="space-y-1">' + groups.map(g => `<li class="text-sm">• ${g}</li>`).join('') + '</ul></div>';
 }
 
-async function fetchContacts(sessionId) {
-    const res = await fetch(`/api/contacts/${sessionId}`, {
-        headers: { 'x-api-key': '<%= API_KEY %>' }
-    });
+async function loadContacts() {
+  const sid = currentSessionId();
+  if (!sid) return alert('Select a session first');
+  const res = await fetch(`/contacts/${sid}`);
     const contacts = await res.json();
-    document.getElementById(`contacts-${sessionId}`).innerHTML =
-        '<ul>' + contacts.map(c => `<li onclick="copyToClipboard('${c.number}')">${c.name} (${c.number})</li>`).join('') + '</ul>';
+  document.getElementById('contacts-list').innerHTML = '<div class="bg-gray-50 rounded p-3"><h4 class="font-semibold mb-2">Contacts:</h4><ul class="space-y-1">' + contacts.map(c => `<li class="text-sm">• ${c.name} (${c.number})</li>`).join('') + '</ul></div>';
 }
 
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text);
-    alert(`📋 Copied: ${text}`);
+function onSessionChange() {
+  updateQrInfo();
+}
+
+async function updateQrInfo() {
+  const sid = currentSessionId();
+  const box = document.getElementById('qrInfo');
+  const container = document.getElementById('qrContainer');
+  if (!sid) { box.classList.add('hidden'); return; }
+  const res = await fetch(`/get-qr/${sid}`);
+  const data = await res.json();
+  box.classList.remove('hidden');
+  if (data.qr && typeof data.qr === 'string' && data.qr.startsWith('data:image')) {
+    container.innerHTML = `<img class="w-48 mx-auto" src="${data.qr}" alt="QR Code">`;
+  } else {
+    container.innerHTML = `<p class="text-green-700 font-semibold">✅ Session is logged in</p>`;
+  }
+}
+
+fetchQuota();
+
+// Chat Panel Functions
+let chatThreads = [];
+let chatActivePeer = '';
+
+async function loadChatSessions() {
+  const res = await fetch('/sessions');
+  const data = await res.json();
+  const sel = document.getElementById('chatSessionSelect');
+  sel.innerHTML = '<option value="">Select session</option>' + data.activeSessions.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+async function loadChatThreads() {
+  const res = await fetch('/chat/threads');
+  chatThreads = await res.json();
+  renderChatThreads();
+}
+
+function renderChatThreads() {
+  const q = (document.getElementById('chatSearchInput').value || '').toLowerCase();
+  const list = document.getElementById('chatThreadList');
+  list.innerHTML = '';
+  chatThreads
+    .filter(t => t.peer.toLowerCase().includes(q))
+    .forEach(t => {
+      const li = document.createElement('li');
+      li.className = 'px-3 py-2 rounded hover:bg-gray-200 cursor-pointer text-left text-sm';
+      li.textContent = t.peer;
+      li.onclick = () => openChatThread(t.peer);
+      list.appendChild(li);
+    });
+}
+
+async function openChatThread(peer) {
+  chatActivePeer = peer;
+  document.getElementById('chatActivePeer').textContent = peer;
+  document.getElementById('createTicketBtn').disabled = false;
+  const res = await fetch(`/chat/messages?peer=${encodeURIComponent(peer)}`);
+  const msgs = await res.json();
+  const box = document.getElementById('chatMessageList');
+  box.innerHTML = '';
+  msgs.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'flex justify-end';
+    const bubble = document.createElement('div');
+    bubble.className = 'inline-block px-3 py-2 rounded-lg max-w-xs ' + (m.status === 'read' ? 'bg-emerald-100' : 'bg-white border');
+    bubble.textContent = m.content || '';
+    const meta = document.createElement('div');
+    meta.className = 'text-xs text-gray-500 mt-1 text-right';
+    meta.textContent = (m.status || '') + ' • ' + new Date(m.created_at).toLocaleString();
+    const wrap = document.createElement('div');
+    wrap.appendChild(bubble);
+    wrap.appendChild(meta);
+    row.appendChild(wrap);
+    box.appendChild(row);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendFromChatPanel(e) {
+  e.preventDefault();
+  const sel = document.getElementById('chatSessionSelect');
+  const sid = sel.value;
+  if (!sid) return alert('Select a session');
+  if (!chatActivePeer) return alert('Select a thread');
+  const input = document.getElementById('chatComposerInput');
+  const message = input.value.trim();
+  if (!message) return false;
+  const res = await fetch('/chat/send', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: sid, peer: chatActivePeer, message })
+  });
+  const data = await res.json();
+  if (!res.ok) { alert(data.error || 'Send failed'); return false; }
+  input.value = '';
+  openChatThread(chatActivePeer);
+  showToast('Message sent successfully!', 'success');
+  return false;
+}
+
+document.getElementById('createTicketBtn').onclick = async () => {
+  if (!chatActivePeer) return;
+  const res = await fetch('/chat/ticket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ peer: chatActivePeer }) });
+  if (res.ok) {
+    showToast('Ticket created successfully!', 'success');
+  } else {
+    showToast('Failed to create ticket', 'error');
+  }
+};
+
+async function handleExportMessages(e) {
+  e.preventDefault();
+  const fromDate = document.getElementById('exportFromDate').value;
+  const toDate = document.getElementById('exportToDate').value;
+  const peer = document.getElementById('exportPeer').value;
+  
+  const params = new URLSearchParams();
+  if (fromDate) params.append('fromDate', fromDate);
+  if (toDate) params.append('toDate', toDate);
+  if (peer) params.append('peer', peer);
+  
+  // Update the direct download link
+  const directLink = document.getElementById('exportDirectLink');
+  if (directLink) {
+    directLink.href = '/export/messages?' + params.toString();
+  }
+  
+  try {
+    const res = await fetch('/export/messages?' + params.toString(), {
+      method: 'GET',
+      credentials: 'same-origin', // Include cookies for session authentication
+      headers: {
+        'Accept': 'text/csv,application/json'
+      }
+    });
+    
+    // Check if redirected to login page
+    if (res.redirected && res.url.includes('/login')) {
+      window.location.href = '/login';
+      return false;
+    }
+    
+    if (!res.ok) {
+      // Check if response is JSON before trying to parse
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        throw new Error(data.error || 'Export failed');
+      } else if (contentType && contentType.includes('text/html')) {
+        throw new Error('Session expired. Please refresh the page and login again.');
+      } else {
+        throw new Error('Export failed with status: ' + res.status);
+      }
+    }
+    
+    // Check if we actually got a CSV file
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('text/csv')) {
+      console.error('Unexpected content type:', contentType);
+    }
+    
+    // Download the CSV file
+    const blob = await res.blob();
+    
+    // Check if blob has content
+    if (blob.size === 0) {
+      showToast('No messages found to export', 'error');
+      return false;
+    }
+    
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'messages_export_' + new Date().toISOString().split('T')[0] + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    showToast('Messages exported successfully!', 'success');
+  } catch (err) {
+    console.error('Export error:', err);
+    showToast('Error: ' + (err.message || 'Export failed'), 'error');
+  }
+  return false;
 }
 </script>
 
